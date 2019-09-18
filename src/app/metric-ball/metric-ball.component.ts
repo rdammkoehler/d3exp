@@ -35,6 +35,7 @@ interface IChartConfig {
 
 interface IBallMetricConfig extends IChartConfig {
   ballRadius: number;
+  ballStrokeWidth?: number;
 }
 
 @Component({
@@ -50,9 +51,11 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   @Input()
   labelText = '';
   @Input()
-  width = 100;
+  width = 120;
   @Input()
-  height = 25;
+  height = 20;
+  @Input()
+  ballStrokeWidth = 1;
 
   @Output()
   created: EventEmitter<boolean> = new EventEmitter();
@@ -68,9 +71,11 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
     const laGreen = '#4ABD92';
     const laDarkGreen = '#2C9171';
 
-    // TODO what about wrapping?
     this.makeMetricBall(graphs, this.labelText, this.value, {
-      ballRadius: Math.min(this.width, this.height)
+      width: this.width,
+      height: this.height,
+      ballRadius: Math.min(this.width, this.height) / 2,
+      ballStrokeWidth: this.ballStrokeWidth
     });
     this.created.emit(true);
   }
@@ -104,14 +109,16 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .attr('height', clipHeight);
   }
 
-  private makeBallTemplate(element: any, radius: number, config: IBallMetricConfig) {
-    const outlinePadding = 2; // TODO config.outlineStrokeWidth;
+  private createBallGraph(element: any, radius: number, config: IBallMetricConfig) {
+    const outlinePadding = config.ballStrokeWidth;
     const gaugeCenterX = (-1 * radius);
     const gaugeCenterY = 0;
     const gaugeWidth = (2 * radius + outlinePadding);
     const gaugeHeight = (2 * radius + outlinePadding);
     const clipXPos = (-2 * radius);
     const clipWidth = (2 * radius + outlinePadding);
+    // console.log('outlinePadding: ' + outlinePadding + ' gaugeCenterX: ' + gaugeCenterX + ' gaugeCenterY: ' + gaugeCenterY +
+    //   ' gaugeWidth: ' + gaugeWidth + ' gaugeHeight: ' + gaugeHeight + ' clipXPos: ' + clipXPos + ' clipWidth: ' + clipWidth);
     const svgTag = element.append('svg')
       .attr('class', 'ball-metric-svg-canvas')
       .attr('width', gaugeWidth)
@@ -143,24 +150,47 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .attr('stroke-width', outlinePadding);
   }
 
-  private makeBall(element: any, value: number, config: IBallMetricConfig) {
-    const radius = config.ballRadius;
-    this.makeBallTemplate(element, radius, config);
-    this.clipBall(radius, value);
+  private attachBallGraph(element: any, value: number, config: IBallMetricConfig) {
+    this.createBallGraph(element, config.ballRadius, config);
+    this.clipBall(config.ballRadius, value);
+  }
+
+  private createLabel(ballMetric, metricName: string, config: IBallMetricConfig) {
+    const labelWidth = config.width - (2 * config.ballRadius + 2 * config.ballStrokeWidth) - 1;
+    const labelHeight = config.height;
+    const labelLeftPad = 2 * config.ballStrokeWidth; // TODO I made this ratio up, is it OK?
+    const fontSize = (labelHeight / 2 - 2);
+    const label = ballMetric.append('div')
+      .attr('class', 'ball-metric-label')
+      .style('display', 'flex')
+      .style('float', 'right')
+      .style('width', labelWidth + 'px')
+      .style('overflow', 'hidden')
+      .style('padding-left', labelLeftPad + 'px')
+      .style('vertical-align', 'middle')
+      .style('height', labelHeight + 'px');
+    const labelText = label
+      .append('div')
+      .attr('class', 'ball-metric-label-text')
+      .style('width', labelWidth + 'px')
+      .style('font-size', fontSize + 'px') // TODO should probably be margin or pad or something, not 2
+      .style('margin', 'auto')  // TODO margin: auto is a hack, look at other flexbox approaches.
+      .text(metricName);
+  }
+
+  private createAnchorElement(element: any, config: IBallMetricConfig) {
+    return element.append('div')
+      .attr('class', 'ball-metric')
+      .style('display', 'flex')
+      .style('width', config.width + 'px')
+      .style('height', config.height + 'px')
+      .style('float', 'left');
   }
 
   private makeMetricBall(element: any, metricName: string, metricValue: number, config: IBallMetricConfig) {
-    const ballMetric = element.append('div')
-      .attr('class', 'ball-metric')
-      .style('float', 'left');
-    this.makeBall(ballMetric, metricValue, config);
-    ballMetric.append('div')
-      .attr('class', 'ball-metric-label')
-      .style('float', 'right')
-      .attr('height', '100%')
-      .append('p')
-      .attr('class', 'ball-metric-label-text')
-      .attr('height', '100%')
-      .text(metricName);
+    const ballMetric = this.createAnchorElement(element, config);
+    this.attachBallGraph(ballMetric, metricValue, config);
+    this.createLabel(ballMetric, metricName, config);
   }
+
 }
