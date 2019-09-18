@@ -68,8 +68,8 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
 
   ngAfterContentInit() {
     const graphs = d3.select('#ball-metric');
-    const laGreen = '#4ABD92';
-    const laDarkGreen = '#2C9171';
+    // const laGreen = '#4ABD92';
+    // const laDarkGreen = '#2C9171';
 
     this.makeMetricBall(graphs, this.labelText, this.value, {
       width: this.width,
@@ -82,8 +82,8 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
 
   private makeMetricBall(element: any, metricName: string, metricValue: number, config: IBallMetricConfig) {
     const ballMetric = this.createAnchorElement(element, config);
-    this.attachBallGraph(ballMetric, metricValue, config);
-    this.createLabel(ballMetric, metricName, config);
+    this.attachBall(ballMetric, metricValue, config);
+    this.attachLabel(ballMetric, metricName, config);
   }
 
   private createAnchorElement(element: any, config: IBallMetricConfig) {
@@ -95,12 +95,12 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .style('float', 'left');
   }
 
-  private attachBallGraph(element: any, value: number, config: IBallMetricConfig) {
-    this.createBallGraph(element, config.ballRadius, config.ballStrokeWidth);
+  private attachBall(element: any, value: number, config: IBallMetricConfig) {
+    this.createBall(element, config.ballRadius, config.ballStrokeWidth);
     this.clipBall(config.ballRadius, value);
   }
 
-  private createBallGraph(element: any, ballRadius: number, ballStrokeWidth: number) {
+  private createBall(element: any, ballRadius: number, ballStrokeWidth: number) {
     const ballCenterX = (-1 * ballRadius);
     const ballCenterY = 0;
     const ballSize = (2 * ballRadius + ballStrokeWidth);
@@ -131,11 +131,11 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
     const yTranslation = ballRadius + ballStrokeWidth / 2;
     const ballGroup = svgTag.append('g')
       .attr('transform', 'translate(' + xTranslation + ', ' + yTranslation + ')');
-    this.createFilledGauge(ballGroup, ballCenterX, ballCenterY, ballRadius);
-    this.createGaugeOutline(ballGroup, ballCenterX, ballCenterY, ballRadius, ballStrokeWidth);
+    this.createFilledBall(ballGroup, ballCenterX, ballCenterY, ballRadius);
+    this.createBallOutline(ballGroup, ballCenterX, ballCenterY, ballRadius, ballStrokeWidth);
   }
 
-  private createFilledGauge(ballGroup: any, ballCenterX: number, ballCenterY: number, ballRadius: number) {
+  private createFilledBall(ballGroup: any, ballCenterX: number, ballCenterY: number, ballRadius: number) {
     return ballGroup.append('circle')
       .attr('class', 'ball-metric-gauge-fill')
       .attr('cx', ballCenterX)
@@ -145,7 +145,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .attr('clip-path', 'url(#clip)');
   }
 
-  private createGaugeOutline(ballGroup: any, ballCenterX: number, ballCenterY: number, ballRadius: number, ballStrokeWidth: number) {
+  private createBallOutline(ballGroup: any, ballCenterX: number, ballCenterY: number, ballRadius: number, ballStrokeWidth: number) {
     return ballGroup.append('circle')
       .attr('class', 'ball-metric-gauge-outline')
       .attr('cx', ballCenterX)
@@ -156,10 +156,10 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .attr('stroke-width', ballStrokeWidth);
   }
 
-  private clipBall(radius: number, value: number) {
+  private clipBall(ballRadius: number, value: number) {
     const theta: number = this.findThetaFor(Math.abs(value));
-    const clipHeight: number = 2 * radius * theta;
-    const yClipValue: number = radius - clipHeight;
+    const clipHeight: number = 2 * ballRadius * theta;
+    const yClipValue: number = ballRadius - clipHeight;
     d3.select('#clip rect')
       .attr('y', yClipValue)
       .attr('height', clipHeight);
@@ -185,7 +185,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
     return theta;
   }
 
-  private createLabel(ballMetric, metricName: string, config: IBallMetricConfig) {
+  private attachLabel(ballMetric, metricName: string, config: IBallMetricConfig) {
     const labelWidth = config.width - (2 * config.ballRadius + 2 * config.ballStrokeWidth) - 1;
     const labelHeight = config.height;
     const labelLeftPad = 2 * config.ballStrokeWidth; // TODO I made this ratio up, is it OK?
