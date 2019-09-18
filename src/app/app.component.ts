@@ -7,6 +7,7 @@ interface BallGraphConfiguration {
   outlineStrokeColor: string;
   gaugeFillColor: string;
   backgroundFillColor: string;
+  fontSize: (string | number);
   fontFamily: string;
   fontColor: string;
 }
@@ -954,33 +955,35 @@ export class AppComponent implements AfterContentInit {
     const laGreen = '#4ABD92';
     // Normal: #4ABD92
     // Dark: #2C9171
+    // need to make this conform with the IChartConfig in Navigator
     const config: BallGraphConfiguration = {
-      radius: 50,
-      outlineStrokeWidth: 5,
+      radius: 20, // like width
+      outlineStrokeWidth: 2,
       outlineStrokeColor: laGreen,
       gaugeFillColor: laGreen,
       backgroundFillColor: 'black',
-      fontFamily: 'Times',
+      fontSize: '8px',
+      fontFamily: 'sans-serif',
       fontColor: 'white'
     };
 
+    // make the ball graph
     const argElement = graphs.append('div')
       .attr('id', 'ballMetric')
       .style('float', 'left')
       .style('background', config.backgroundFillColor);
-    const argLabel = 'Label Text That is longer';
     const argValue = 0.5;
-
-
     this.makeBall(argElement, argValue, config);
 
     // attempt to put the label on the right using traditional HTML
+    const argLabel = 'LABEL TEXT THAT IS LONGER';
     argElement.append('div')
       .style('float', 'right')
       .attr('height', '100%')
       .attr('vertical-align', 'middle')
       .append('p')
       .style('font-family', config.fontFamily)
+      .style('font-size', config.fontSize)
       .style('color', config.fontColor)
       .attr('class', 'ballMetricLabel')
       .attr('height', '100%')
