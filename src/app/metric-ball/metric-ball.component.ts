@@ -80,12 +80,89 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
     this.created.emit(true);
   }
 
-  private convergeThetaValue(value: number): number {
-    let theta = Math.pow(12 * value * Math.PI, 1 / 3);
-    for (let idx = 0; idx < 10; ++idx) {
-      theta = (Math.sin(theta) - theta * Math.cos(theta) + 2 * value * Math.PI) / (1 - Math.cos(theta));
-    }
-    return theta;
+  private makeMetricBall(element: any, metricName: string, metricValue: number, config: IBallMetricConfig) {
+    const ballMetric = this.createAnchorElement(element, config);
+    this.attachBallGraph(ballMetric, metricValue, config);
+    this.createLabel(ballMetric, metricName, config);
+  }
+
+  private createAnchorElement(element: any, config: IBallMetricConfig) {
+    return element.append('div')
+      .attr('class', 'ball-metric')
+      .style('display', 'flex')
+      .style('width', config.width + 'px')
+      .style('height', config.height + 'px')
+      .style('float', 'left');
+  }
+
+  private attachBallGraph(element: any, value: number, config: IBallMetricConfig) {
+    this.createBallGraph(element, config.ballRadius, config.ballStrokeWidth);
+    this.clipBall(config.ballRadius, value);
+  }
+
+  private createBallGraph(element: any, ballRadius: number, ballStrokeWidth: number) {
+    const ballCenterX = (-1 * ballRadius);
+    const ballCenterY = 0;
+    const ballSize = (2 * ballRadius + ballStrokeWidth);
+    const clipXPos = (-2 * ballRadius);
+    const svgTag = element.append('svg')
+      .attr('class', 'ball-metric-svg-canvas')
+      .attr('width', ballSize)
+      .attr('height', ballSize);
+    this.createClipRegion(svgTag, clipXPos, ballSize);
+    this.createMetricBall(svgTag, ballRadius, ballStrokeWidth, ballCenterX, ballCenterY);
+  }
+
+  private createClipRegion(svgTag: any, clipXPos: number, clipWidth: number) {
+    const defs = svgTag.append('defs');
+    const clipPath = defs.append('clipPath')
+      .attr('id', 'clip');
+    const clipRect = clipPath.append('rect')
+      .attr('id', 'clipRect')
+      .attr('class', 'ball-metric-gauge-clip')
+      .attr('x', clipXPos)
+      .attr('width', clipWidth)
+      .attr('y', 0)
+      .attr('height', 0);
+  }
+
+  private createMetricBall(svgTag: any, ballRadius: number, ballStrokeWidth: number, ballCenterX: number, ballCenterY: number) {
+    const xTranslation = 2 * ballRadius + ballStrokeWidth / 2;
+    const yTranslation = ballRadius + ballStrokeWidth / 2;
+    const ballGroup = svgTag.append('g')
+      .attr('transform', 'translate(' + xTranslation + ', ' + yTranslation + ')');
+    this.createFilledGauge(ballGroup, ballCenterX, ballCenterY, ballRadius);
+    this.createGaugeOutline(ballGroup, ballCenterX, ballCenterY, ballRadius, ballStrokeWidth);
+  }
+
+  private createFilledGauge(ballGroup: any, ballCenterX: number, ballCenterY: number, ballRadius: number) {
+    return ballGroup.append('circle')
+      .attr('class', 'ball-metric-gauge-fill')
+      .attr('cx', ballCenterX)
+      .attr('cy', ballCenterY)
+      .attr('r', ballRadius)
+      .attr('fill', this.color)
+      .attr('clip-path', 'url(#clip)');
+  }
+
+  private createGaugeOutline(ballGroup: any, ballCenterX: number, ballCenterY: number, ballRadius: number, ballStrokeWidth: number) {
+    return ballGroup.append('circle')
+      .attr('class', 'ball-metric-gauge-outline')
+      .attr('cx', ballCenterX)
+      .attr('cy', ballCenterY)
+      .attr('r', ballRadius)
+      .attr('fill', 'none')   // must force this to none
+      .attr('stroke', this.color)
+      .attr('stroke-width', ballStrokeWidth);
+  }
+
+  private clipBall(radius: number, value: number) {
+    const theta: number = this.findThetaFor(Math.abs(value));
+    const clipHeight: number = 2 * radius * theta;
+    const yClipValue: number = radius - clipHeight;
+    d3.select('#clip rect')
+      .attr('y', yClipValue)
+      .attr('height', clipHeight);
   }
 
   private findThetaFor(value: number): number {
@@ -100,59 +177,12 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
     return value <= 0 || value >= 1;
   }
 
-  private clipBall(radius: number, value: number) {
-    const theta: number = this.findThetaFor(Math.abs(value));
-    const clipHeight: number = 2 * radius * theta;
-    const yClipValue: number = radius - clipHeight;
-    d3.select('#clip rect')
-      .attr('y', yClipValue)
-      .attr('height', clipHeight);
-  }
-
-  private createBallGraph(element: any, radius: number, config: IBallMetricConfig) {
-    const outlinePadding = config.ballStrokeWidth;
-    const gaugeCenterX = (-1 * radius);
-    const gaugeCenterY = 0;
-    const gaugeWidth = (2 * radius + outlinePadding);
-    const gaugeHeight = (2 * radius + outlinePadding);
-    const clipXPos = (-2 * radius);
-    const clipWidth = (2 * radius + outlinePadding);
-    // console.log('outlinePadding: ' + outlinePadding + ' gaugeCenterX: ' + gaugeCenterX + ' gaugeCenterY: ' + gaugeCenterY +
-    //   ' gaugeWidth: ' + gaugeWidth + ' gaugeHeight: ' + gaugeHeight + ' clipXPos: ' + clipXPos + ' clipWidth: ' + clipWidth);
-    const svgTag = element.append('svg')
-      .attr('class', 'ball-metric-svg-canvas')
-      .attr('width', gaugeWidth)
-      .attr('height', gaugeHeight);
-    const defs = svgTag.append('defs');
-    const clipPath = defs.append('clipPath')
-      .attr('id', 'clip');
-    const clipRect = clipPath.append('rect') // don't need y or height, they are getting calculated (somehow)
-      .attr('id', 'clipRect')
-      .attr('class', 'ball-metric-gauge-clip')
-      .attr('x', clipXPos)
-      .attr('width', clipWidth);
-    const gaugeGroup = svgTag.append('g')
-      .attr('transform', 'translate(' + (2 * radius + outlinePadding / 2) + ', ' + (radius + outlinePadding / 2) + ')');
-    const filledGauge = gaugeGroup.append('circle')
-      .attr('class', 'ball-metric-gauge-fill')
-      .attr('cx', gaugeCenterX)
-      .attr('cy', gaugeCenterY)
-      .attr('r', radius)
-      .attr('fill', this.color)
-      .attr('clip-path', 'url(#clip)');
-    const gaugeOutline = gaugeGroup.append('circle')
-      .attr('class', 'ball-metric-gauge-outline')
-      .attr('cx', gaugeCenterX)
-      .attr('cy', gaugeCenterY)
-      .attr('r', radius)
-      .attr('fill', 'none')   // must force this to none
-      .attr('stroke', this.color)
-      .attr('stroke-width', outlinePadding);
-  }
-
-  private attachBallGraph(element: any, value: number, config: IBallMetricConfig) {
-    this.createBallGraph(element, config.ballRadius, config);
-    this.clipBall(config.ballRadius, value);
+  private convergeThetaValue(value: number): number {
+    let theta = Math.pow(12 * value * Math.PI, 1 / 3);
+    for (let idx = 0; idx < 10; ++idx) {
+      theta = (Math.sin(theta) - theta * Math.cos(theta) + 2 * value * Math.PI) / (1 - Math.cos(theta));
+    }
+    return theta;
   }
 
   private createLabel(ballMetric, metricName: string, config: IBallMetricConfig) {
@@ -169,28 +199,12 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .style('padding-left', labelLeftPad + 'px')
       .style('vertical-align', 'middle')
       .style('height', labelHeight + 'px');
-    const labelText = label
-      .append('div')
+    const labelText = label.append('div')
       .attr('class', 'ball-metric-label-text')
       .style('width', labelWidth + 'px')
       .style('font-size', fontSize + 'px') // TODO should probably be margin or pad or something, not 2
       .style('margin', 'auto')  // TODO margin: auto is a hack, look at other flexbox approaches.
       .text(metricName);
-  }
-
-  private createAnchorElement(element: any, config: IBallMetricConfig) {
-    return element.append('div')
-      .attr('class', 'ball-metric')
-      .style('display', 'flex')
-      .style('width', config.width + 'px')
-      .style('height', config.height + 'px')
-      .style('float', 'left');
-  }
-
-  private makeMetricBall(element: any, metricName: string, metricValue: number, config: IBallMetricConfig) {
-    const ballMetric = this.createAnchorElement(element, config);
-    this.attachBallGraph(ballMetric, metricValue, config);
-    this.createLabel(ballMetric, metricName, config);
   }
 
 }
