@@ -34,8 +34,14 @@ interface IChartConfig {
 }
 
 interface IBallMetricConfig extends IChartConfig {
-  ballRadius: number;
-  ballStrokeWidth?: number;
+  radius: number;
+  strokeWidth?: number;
+}
+
+interface Ball {
+  center: { x: number; y: number; };
+  radius: number;
+  size: number;
 }
 
 @Component({
@@ -74,8 +80,8 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
     this.makeMetricBall(graphs, this.labelText, this.value, {
       width: this.width,
       height: this.height,
-      ballRadius: Math.min(this.width, this.height) / 2,
-      ballStrokeWidth: this.ballStrokeWidth
+      radius: Math.min(this.width, this.height) / 2,
+      strokeWidth: this.ballStrokeWidth
     });
     this.created.emit(true);
   }
@@ -96,21 +102,27 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   }
 
   private attachBall(element: any, value: number, config: IBallMetricConfig) {
-    this.createBall(element, config.ballRadius, config.ballStrokeWidth);
-    this.clipBall(config.ballRadius, value);
+    const ball: Ball = this.createBall(element, config);
+    this.clipBall(ball.radius, value);
   }
 
-  private createBall(element: any, ballRadius: number, ballStrokeWidth: number) {
-    const ballCenterX = (-1 * ballRadius);
-    const ballCenterY = 0;
-    const ballSize = (2 * ballRadius + ballStrokeWidth);
-    const clipXPos = (-2 * ballRadius);
+  private createBall(element: any, config: IBallMetricConfig): Ball {
+    const ball: Ball = {
+      center: {
+        x: (-1 * config.radius),
+        y: 0
+      },
+      radius: config.radius,
+      size: (2 * config.radius + config.strokeWidth)
+    };
+    const clipXPos = (-2 * config.radius);
     const svgTag = element.append('svg')
       .attr('class', 'ball-metric-svg-canvas')
-      .attr('width', ballSize)
-      .attr('height', ballSize);
-    this.createClipRegion(svgTag, clipXPos, ballSize);
-    this.createMetricBall(svgTag, ballRadius, ballStrokeWidth, ballCenterX, ballCenterY);
+      .attr('width', ball.size)
+      .attr('height', ball.size);
+    this.createClipRegion(svgTag, clipXPos, ball.size);
+    this.createMetricBall(svgTag, config.strokeWidth, ball);
+    return ball;
   }
 
   private createClipRegion(svgTag: any, clipXPos: number, clipWidth: number) {
@@ -126,31 +138,31 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .attr('height', 0);
   }
 
-  private createMetricBall(svgTag: any, ballRadius: number, ballStrokeWidth: number, ballCenterX: number, ballCenterY: number) {
-    const xTranslation = 2 * ballRadius + ballStrokeWidth / 2;
-    const yTranslation = ballRadius + ballStrokeWidth / 2;
+  private createMetricBall(svgTag: any, ballStrokeWidth: number, ball: Ball) {
+    const xTranslation = 2 * ball.radius + ballStrokeWidth / 2;
+    const yTranslation = ball.radius + ballStrokeWidth / 2;
     const ballGroup = svgTag.append('g')
       .attr('transform', 'translate(' + xTranslation + ', ' + yTranslation + ')');
-    this.createFilledBall(ballGroup, ballCenterX, ballCenterY, ballRadius);
-    this.createBallOutline(ballGroup, ballCenterX, ballCenterY, ballRadius, ballStrokeWidth);
+    this.createFilledBall(ballGroup, ball);
+    this.createBallOutline(ballGroup, ball, ballStrokeWidth);
   }
 
-  private createFilledBall(ballGroup: any, ballCenterX: number, ballCenterY: number, ballRadius: number) {
+  private createFilledBall(ballGroup: any, ball: Ball) {
     return ballGroup.append('circle')
       .attr('class', 'ball-metric-gauge-fill')
-      .attr('cx', ballCenterX)
-      .attr('cy', ballCenterY)
-      .attr('r', ballRadius)
+      .attr('cx', ball.center.x)
+      .attr('cy', ball.center.y)
+      .attr('r', ball.radius)
       .attr('fill', this.color)
       .attr('clip-path', 'url(#clip)');
   }
 
-  private createBallOutline(ballGroup: any, ballCenterX: number, ballCenterY: number, ballRadius: number, ballStrokeWidth: number) {
+  private createBallOutline(ballGroup: any, ball: Ball, ballStrokeWidth: number) {
     return ballGroup.append('circle')
       .attr('class', 'ball-metric-gauge-outline')
-      .attr('cx', ballCenterX)
-      .attr('cy', ballCenterY)
-      .attr('r', ballRadius)
+      .attr('cx', ball.center.x)
+      .attr('cy', ball.center.y)
+      .attr('r', ball.radius)
       .attr('fill', 'none')   // must force this to none
       .attr('stroke', this.color)
       .attr('stroke-width', ballStrokeWidth);
@@ -186,9 +198,9 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   }
 
   private attachLabel(ballMetric, metricName: string, config: IBallMetricConfig) {
-    const labelWidth = config.width - (2 * config.ballRadius + 2 * config.ballStrokeWidth) - 1;
+    const labelWidth = config.width - (2 * config.radius + 2 * config.strokeWidth) - 1;
     const labelHeight = config.height;
-    const labelLeftPad = 2 * config.ballStrokeWidth; // TODO I made this ratio up, is it OK?
+    const labelLeftPad = 2 * config.strokeWidth; // TODO I made this ratio up, is it OK?
     const fontSize = (labelHeight / 2 - 2);
     const label = ballMetric.append('div')
       .attr('class', 'ball-metric-label')
