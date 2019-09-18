@@ -4,12 +4,6 @@ import * as d3 from 'd3';
 interface BallGraphConfiguration {
   radius: number;
   outlineStrokeWidth: number;
-  outlineStrokeColor: string;
-  gaugeFillColor: string;
-  backgroundFillColor: string;
-  fontSize: (string | number);
-  fontFamily: string;
-  fontColor: string;
 }
 
 @Component({
@@ -914,35 +908,62 @@ export class AppComponent implements AfterContentInit {
 
   makeBallTemplate(element: any, radius: number, config: BallGraphConfiguration) {
     const outlinePadding = config.outlineStrokeWidth;
+    const gaugeCenterX = (-1 * radius);
+    const gaugeCenterY = 0;
+    const gaugeWidth = (2 * radius + outlinePadding);
+    const gaugeHeight = (2 * radius + outlinePadding);
+    const clipXPos = (-2 * radius);
+    const clipWidth = (2 * radius + outlinePadding);
     const svgTag = element.append('svg')
-      .attr('width', (4 * radius))
-      .attr('height', (2 * radius + outlinePadding));
+      .attr('class', 'ball-metric-svg-canvas')
+      .attr('width', gaugeWidth)
+      .attr('height', gaugeHeight);
     const defs = svgTag.append('defs');
     const clipPath = defs.append('clipPath')
       .attr('id', 'clip');
-    const clipRect = clipPath.append('rect')
-      .attr('x', (-1 * radius))
-      .attr('y', (-1 * radius))
-      .attr('width', (2 * radius))
-      .attr('height', (2 * radius));
+    const clipRect = clipPath.append('rect') // don't need y or height, they are getting calculated (somehow)
+      .attr('id', 'clipRect')
+      .attr('class', 'ball-metric-gauge-clip')
+      .attr('x', clipXPos)
+      .attr('width', clipWidth);
     const gaugeGroup = svgTag.append('g')
-      .attr('transform', 'translate(' + (2 * radius) + ', ' + (radius + (outlinePadding / 2)) + ')');
-    // is the y above 1/2 height? do I need to know the height of the control to get this right?
+      .attr('transform', 'translate(' + (2 * radius + outlinePadding / 2) + ', ' + (radius + outlinePadding / 2) + ')');
     const filledGauge = gaugeGroup.append('circle')
-      .attr('clip-path', 'url(#clip)')
+      .attr('class', 'ball-metric-gauge-fill')
+      .attr('cx', gaugeCenterX)
+      .attr('cy', gaugeCenterY)
       .attr('r', radius)
-      .attr('fill', config.gaugeFillColor);
+      // .attr('fill', config.gaugeFillColor)
+      .attr('clip-path', 'url(#clip)');
     const gaugeOutline = gaugeGroup.append('circle')
+      .attr('class', 'ball-metric-gauge-outline')
+      .attr('cx', gaugeCenterX)
+      .attr('cy', gaugeCenterY)
       .attr('r', radius)
-      .attr('fill', 'none')
-      .attr('stroke', config.outlineStrokeColor)
-      .attr('stroke-width', config.outlineStrokeWidth);
+      .attr('fill', 'none')   // must force this to none
+      // .attr('stroke', config.outlineStrokeColor)
+      .attr('stroke-width', outlinePadding);
   }
 
   makeBall(element: any, value: number, config: BallGraphConfiguration) {
     const radius = config.radius;
     this.makeBallTemplate(element, radius, config);
     this.clipBall(radius, value);
+  }
+
+  makeMetricBall(element: any, metricName: string, metricValue: number, config: BallGraphConfiguration) {
+    const ballMetric = element.append('div')
+      .attr('class', 'ball-metric')
+      .style('float', 'left')
+    this.makeBall(ballMetric, metricValue, config);
+    ballMetric.append('div')
+      .attr('class', 'ball-metric-label')
+      .style('float', 'right')
+      .attr('height', '100%')
+      .append('p')
+      .attr('class', 'ball-metric-label-text')
+      .attr('height', '100%')
+      .text(metricName);
   }
 
   ngAfterContentInit() {
@@ -953,41 +974,15 @@ export class AppComponent implements AfterContentInit {
     // this.liveBTC();
 
     const laGreen = '#4ABD92';
-    // Normal: #4ABD92
-    // Dark: #2C9171
+    const laDarkGreen = '#2C9171';
+
     // need to make this conform with the IChartConfig in Navigator
-    const config: BallGraphConfiguration = {
-      radius: 20, // like width
-      outlineStrokeWidth: 2,
-      outlineStrokeColor: laGreen,
-      gaugeFillColor: laGreen,
-      backgroundFillColor: 'black',
-      fontSize: '8px',
-      fontFamily: 'sans-serif',
-      fontColor: 'white'
-    };
-
-    // make the ball graph
-    const argElement = graphs.append('div')
-      .attr('id', 'ballMetric')
-      .style('float', 'left')
-      .style('background', config.backgroundFillColor);
-    const argValue = 0.5;
-    this.makeBall(argElement, argValue, config);
-
-    // attempt to put the label on the right using traditional HTML
-    const argLabel = 'LABEL TEXT THAT IS LONGER';
-    argElement.append('div')
-      .style('float', 'right')
-      .attr('height', '100%')
-      .attr('vertical-align', 'middle')
-      .append('p')
-      .style('font-family', config.fontFamily)
-      .style('font-size', config.fontSize)
-      .style('color', config.fontColor)
-      .attr('class', 'ballMetricLabel')
-      .attr('height', '100%')
-      .text(argLabel);
+    const metricValue = 0.1;
+    const metricName = 'LABEL TEXT THAT IS LONGER AND LONGER AND LONGER'; // TODO what about wrapping?
+    this.makeMetricBall(graphs, metricName, metricValue, {
+      radius: 50, // like width
+      outlineStrokeWidth: 2
+    });
 
     // this.liquidFill();
   }
