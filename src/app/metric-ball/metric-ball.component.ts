@@ -1,6 +1,7 @@
 import {AfterContentInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import * as d3 from 'd3';
 import {v4} from 'uuid';
+import {findThetaFor} from '../util/clip-calculator';
 
 // fakes from navigator
 // tslint:disable:no-empty-interface
@@ -70,8 +71,8 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
 
   uuid: string = v4();
 
-  @ViewChild('chart')  // this guy ties us to the control in the template html
-  _chartDiv: ElementRef;
+  @ViewChild('chart', {static: true})  // this guy ties us to the control in the template html
+  chartDiv: ElementRef;
 
   constructor() {
   }
@@ -80,7 +81,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   }
 
   ngAfterContentInit() {
-    const graphs = d3.select(this._chartDiv.nativeElement);
+    const graphs = d3.select(this.chartDiv.nativeElement);
     // const laGreen = '#4ABD92';
     // const laDarkGreen = '#2C9171';
 
@@ -186,39 +187,18 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   }
 
   private clipBall(ballRadius: number, value: number) {
-    const theta: number = this.findThetaFor(Math.abs(value));
-    const clipHeight: number = 2 * ballRadius * theta;
+    const clipHeight: number = 2 * ballRadius * Math.abs(value);
     const yClipValue: number = ballRadius - clipHeight;
     d3.select('#clip' + this.uuid + ' rect')
       .attr('y', yClipValue)
       .attr('height', clipHeight);
   }
 
-  private findThetaFor(value: number): number {
-    if (this.isOutOfRange(value)) {
-      return value;
-    }
-    const theta: number = this.convergeThetaValue(value);
-    return (1 - Math.cos(theta / 2)) / 2;
-  }
-
-  private isOutOfRange(value: number): boolean {
-    return value <= 0 || value >= 1;
-  }
-
-  private convergeThetaValue(value: number): number {
-    let theta = Math.pow(12 * value * Math.PI, 1 / 3);
-    for (let idx = 0; idx < 10; ++idx) {
-      theta = (Math.sin(theta) - theta * Math.cos(theta) + 2 * value * Math.PI) / (1 - Math.cos(theta));
-    }
-    return theta;
-  }
-
   private attachLabel(ballMetric, metricName: string, config: IBallMetricConfig) {
-    const labelWidth = config.width - (2 * config.radius + 2 * config.strokeWidth) - 1;
-    const labelHeight = config.height;
-    const labelLeftPad = 2 * config.strokeWidth; // TODO I made this ratio up, is it OK?
-    const fontSize = (labelHeight / 2 - 2);
+    const labelWidth: number = config.width - (2 * config.radius + 2 * config.strokeWidth) - 1;
+    const labelHeight: number = config.height;
+    const labelLeftPad: number = 2 * config.strokeWidth; // TODO I made this ratio up, is it OK?
+    const fontSize: number = (labelHeight / 2 - 2);
     const label = ballMetric.append('div')
       .attr('class', 'ball-metric-label')
       .style('display', 'flex')
