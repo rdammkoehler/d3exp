@@ -41,6 +41,7 @@ interface IBallMetricConfig extends IChartConfig {
 interface Ball {
   center: { x: number; y: number; };
   radius: number;
+  strokeWidth: number;
   size: number;
 }
 
@@ -102,32 +103,37 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   }
 
   private attachBall(element: any, value: number, config: IBallMetricConfig) {
-    const ball: Ball = this.createBall(element, config);
+    const ball: Ball = this.createBall(config);
+    this.attachBallCanvas(element, ball);
     this.clipBall(ball.radius, value);
   }
 
-  private createBall(element: any, config: IBallMetricConfig): Ball {
+  private createBall(config: IBallMetricConfig): Ball {
     const ball: Ball = {
       center: {
         x: (-1 * config.radius),
         y: 0
       },
+      strokeWidth: config.strokeWidth,
       radius: config.radius,
       size: (2 * config.radius + config.strokeWidth)
     };
-    const clipXPos = (-2 * config.radius);
+    return ball;
+  }
+
+  private attachBallCanvas(element: any, ball: Ball) {
+    const clipXPos = (-2 * ball.radius);
     const svgTag = element.append('svg')
       .attr('class', 'ball-metric-svg-canvas')
       .attr('width', ball.size)
       .attr('height', ball.size);
-    this.createClipRegion(svgTag, clipXPos, ball.size);
-    this.createMetricBall(svgTag, config.strokeWidth, ball);
-    return ball;
+    this.attachClipRegion(svgTag, clipXPos, ball.size);
+    this.attachFilledBall(svgTag, ball);
   }
 
-  private createClipRegion(svgTag: any, clipXPos: number, clipWidth: number) {
+  private attachClipRegion(svgTag: any, clipXPos: number, clipWidth: number) {
     const defs = svgTag.append('defs');
-    const clipPath = defs.append('clipPath')
+    const clipPath = defs.append('clipPath') // need a GUID4 here or some way to use the component id
       .attr('id', 'clip');
     const clipRect = clipPath.append('rect')
       .attr('id', 'clipRect')
@@ -138,13 +144,18 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .attr('height', 0);
   }
 
-  private createMetricBall(svgTag: any, ballStrokeWidth: number, ball: Ball) {
-    const xTranslation = 2 * ball.radius + ballStrokeWidth / 2;
-    const yTranslation = ball.radius + ballStrokeWidth / 2;
+  private attachFilledBall(svgTag: any, ball: Ball) {
+    const ballGroup = this.createBallGroup(svgTag, ball);
+    this.createFilledBall(ballGroup, ball);
+    this.createBallOutline(ballGroup, ball);
+  }
+
+  private createBallGroup(svgTag: any, ball: Ball) {
+    const xTranslation = 2 * ball.radius + ball.strokeWidth / 2;
+    const yTranslation = ball.radius + ball.strokeWidth / 2;
     const ballGroup = svgTag.append('g')
       .attr('transform', 'translate(' + xTranslation + ', ' + yTranslation + ')');
-    this.createFilledBall(ballGroup, ball);
-    this.createBallOutline(ballGroup, ball, ballStrokeWidth);
+    return ballGroup;
   }
 
   private createFilledBall(ballGroup: any, ball: Ball) {
@@ -157,7 +168,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .attr('clip-path', 'url(#clip)');
   }
 
-  private createBallOutline(ballGroup: any, ball: Ball, ballStrokeWidth: number) {
+  private createBallOutline(ballGroup: any, ball: Ball) {
     return ballGroup.append('circle')
       .attr('class', 'ball-metric-gauge-outline')
       .attr('cx', ball.center.x)
@@ -165,7 +176,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .attr('r', ball.radius)
       .attr('fill', 'none')   // must force this to none
       .attr('stroke', this.color)
-      .attr('stroke-width', ballStrokeWidth);
+      .attr('stroke-width', ball.strokeWidth);
   }
 
   private clipBall(ballRadius: number, value: number) {

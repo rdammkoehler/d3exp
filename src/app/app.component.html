@@ -2,9 +2,15 @@
   <app-metric-ball
     [value]="0.5"
     [labelText]="'ESTABLISH FLOW OF WORK'"
-    [height]="20"
-    [width]="180"
+    [height]="100"
+    [width]="550"
     (created)="onCreated($event)">
   </app-metric-ball>
-  <!-- color, value, config -->
+  <app-metric-ball
+    [value]="1"
+    [labelText]="'MAKE AND MEET COMMITMENTS'"
+    [height]="100"
+    [width]="550"
+    (created)="onCreated($event)">
+  </app-metric-ball>
 </div>
