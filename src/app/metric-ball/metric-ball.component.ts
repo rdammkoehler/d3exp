@@ -1,5 +1,6 @@
-import {AfterContentInit, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {AfterContentInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import * as d3 from 'd3';
+import {v4} from 'uuid';
 
 // fakes from navigator
 // tslint:disable:no-empty-interface
@@ -67,6 +68,11 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   @Output()
   created: EventEmitter<boolean> = new EventEmitter();
 
+  uuid: string = v4();
+
+  @ViewChild('chart')  // this guy ties us to the control in the template html
+  _chartDiv: ElementRef;
+
   constructor() {
   }
 
@@ -74,7 +80,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   }
 
   ngAfterContentInit() {
-    const graphs = d3.select('#ball-metric');
+    const graphs = d3.select(this._chartDiv.nativeElement);
     // const laGreen = '#4ABD92';
     // const laDarkGreen = '#2C9171';
 
@@ -134,7 +140,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   private attachClipRegion(svgTag: any, clipXPos: number, clipWidth: number) {
     const defs = svgTag.append('defs');
     const clipPath = defs.append('clipPath') // need a GUID4 here or some way to use the component id
-      .attr('id', 'clip');
+      .attr('id', 'clip' + this.uuid);
     const clipRect = clipPath.append('rect')
       .attr('id', 'clipRect')
       .attr('class', 'ball-metric-gauge-clip')
@@ -165,7 +171,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
       .attr('cy', ball.center.y)
       .attr('r', ball.radius)
       .attr('fill', this.color)
-      .attr('clip-path', 'url(#clip)');
+      .attr('clip-path', 'url(#clip' + this.uuid + ')');
   }
 
   private createBallOutline(ballGroup: any, ball: Ball) {
@@ -183,7 +189,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
     const theta: number = this.findThetaFor(Math.abs(value));
     const clipHeight: number = 2 * ballRadius * theta;
     const yClipValue: number = ballRadius - clipHeight;
-    d3.select('#clip rect')
+    d3.select('#clip' + this.uuid + ' rect')
       .attr('y', yClipValue)
       .attr('height', clipHeight);
   }
