@@ -101,12 +101,9 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   }
 
   private createAnchorElement(element: any, config: IBallMetricConfig) {
-    return element.append('div')
-      .attr('class', 'ball-metric')
-      .style('display', 'flex')
+    return element.select('div')
       .style('width', config.width + 'px')
-      .style('height', config.height + 'px')
-      .style('float', 'left');
+      .style('height', config.height + 'px');
   }
 
   private attachBall(element: any, value: number, config: IBallMetricConfig) {
@@ -130,8 +127,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
 
   private attachBallCanvas(element: any, ball: Ball) {
     const clipXPos = (-2 * ball.radius);
-    const svgTag = element.append('svg')
-      .attr('class', 'ball-metric-svg-canvas')
+    const svgTag = element.select('svg')
       .attr('width', ball.size)
       .attr('height', ball.size);
     this.attachClipRegion(svgTag, clipXPos, ball.size);
@@ -139,16 +135,11 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   }
 
   private attachClipRegion(svgTag: any, clipXPos: number, clipWidth: number) {
-    const defs = svgTag.append('defs');
-    const clipPath = defs.append('clipPath') // need a GUID4 here or some way to use the component id
+    const clipPath = svgTag.select('defs clipPath')
       .attr('id', 'clip' + this.uuid);
-    const clipRect = clipPath.append('rect')
-      .attr('id', 'clipRect')
-      .attr('class', 'ball-metric-gauge-clip')
+    const clipRect = clipPath.select('rect')
       .attr('x', clipXPos)
-      .attr('width', clipWidth)
-      .attr('y', 0)
-      .attr('height', 0);
+      .attr('width', clipWidth);
   }
 
   private attachFilledBall(svgTag: any, ball: Ball) {
@@ -160,14 +151,13 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   private createBallGroup(svgTag: any, ball: Ball) {
     const xTranslation = 2 * ball.radius + ball.strokeWidth / 2;
     const yTranslation = ball.radius + ball.strokeWidth / 2;
-    const ballGroup = svgTag.append('g')
+    const ballGroup = svgTag.select('g')
       .attr('transform', 'translate(' + xTranslation + ', ' + yTranslation + ')');
     return ballGroup;
   }
 
   private createFilledBall(ballGroup: any, ball: Ball) {
-    return ballGroup.append('circle')
-      .attr('class', 'ball-metric-gauge-fill')
+    return ballGroup.select(':nth-child(1)')
       .attr('cx', ball.center.x)
       .attr('cy', ball.center.y)
       .attr('r', ball.radius)
@@ -176,12 +166,11 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
   }
 
   private createBallOutline(ballGroup: any, ball: Ball) {
-    return ballGroup.append('circle')
-      .attr('class', 'ball-metric-gauge-outline')
+    return ballGroup.select(':nth-child(2)')
       .attr('cx', ball.center.x)
       .attr('cy', ball.center.y)
       .attr('r', ball.radius)
-      .attr('fill', 'none')   // must force this to none
+      .attr('fill', 'none')
       .attr('stroke', this.color)
       .attr('stroke-width', ball.strokeWidth);
   }
@@ -199,20 +188,13 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
     const labelHeight: number = config.height;
     const labelLeftPad: number = 2 * config.strokeWidth; // TODO I made this ratio up, is it OK?
     const fontSize: number = (labelHeight / 2 - 2);
-    const label = ballMetric.append('div')
-      .attr('class', 'ball-metric-label')
-      .style('display', 'flex')
-      .style('float', 'right')
+    const label = ballMetric.select('div')
       .style('width', labelWidth + 'px')
-      .style('overflow', 'hidden')
       .style('padding-left', labelLeftPad + 'px')
-      .style('vertical-align', 'middle')
       .style('height', labelHeight + 'px');
-    const labelText = label.append('div')
-      .attr('class', 'ball-metric-label-text')
+    const labelText = label.select('div')
       .style('width', labelWidth + 'px')
       .style('font-size', fontSize + 'px') // TODO should probably be margin or pad or something, not 2
-      .style('margin', 'auto')  // TODO margin: auto is a hack, look at other flexbox approaches.
       .text(metricName);
   }
 
