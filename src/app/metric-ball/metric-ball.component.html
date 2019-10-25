@@ -5,44 +5,25 @@
                align-items: center;
                justify-content: center;
                -webkit-align-items: center;">
-    <svg class="ball-metric-svg-canvas"
-         width="21"
-         height="21">
+    <svg class="ball-metric-svg-canvas">
       <defs>
         <clipPath>
-          <rect id="clipRect"
-                class="ball-metric-gauge-clip">
-          </rect>
+          <rect id="clipRect" class="ball-metric-gauge-clip"></rect>
         </clipPath>
       </defs>
-      <g transform="translate(20.5, 10.5)">
-        <circle class="ball-metric-gauge-fill"
-                cx="-10"
-                cy="0"
-                r="10"
-                fill="#4ABD92"
-                clip-path="">
-        </circle>
-        <circle class="ball-metric-gauge-outline"
-                cx="-10"
-                cy="0"
-                r="10"
-                fill="none"
-                stroke="#4ABD92"
-                stroke-width="1">
-        </circle>
+      <g>
+        <circle class="ball-metric-gauge-fill"></circle>
+        <circle class="ball-metric-gauge-outline"></circle>
       </g>
     </svg>
     <div class="ball-metric-label"
          style= "display: flex;
                  display: -webkit-flex;
                  align-items: center;
-                 justify-content: center;
+                 justify-content: left;
                  -webkit-align-items: center;
                  overflow: hidden;">
-      <div class="ball-metric-label-text">
-        Ball Metric
-      </div>
+      <div class="ball-metric-label-text"></div>
     </div>
   </div>
 </div>

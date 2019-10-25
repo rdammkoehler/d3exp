@@ -136,7 +136,7 @@ export class MetricBallComponent implements OnInit, AfterContentInit {
 
   private attachClipRegion(svgTag: any, clipXPos: number, clipWidth: number) {
     const clipPath = svgTag.select('defs clipPath')
-      .attr('id', 'clip' + this.uuid);
+      .attr('id', `clip${this.uuid}`);
     const clipRect = clipPath.select('rect')
       .attr('x', clipXPos)
       .attr('width', clipWidth);
